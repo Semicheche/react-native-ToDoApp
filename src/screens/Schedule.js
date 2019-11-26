@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
-import { 
-    StyleSheet, 
-    View, 
-    Text, 
+import {
+    StyleSheet,
+    View,
+    Text,
     ImageBackground,
     FlatList,
     TouchableOpacity,
