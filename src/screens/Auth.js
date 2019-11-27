@@ -2,13 +2,13 @@ import React, { Component } from 'react'
 import {
     StyleSheet,
     Text,
-    TextInput,
     View,
     ImageBackground,
     TouchableOpacity,
     Alert
 } from 'react-native'
-import CommonStyle from '../commonStyles'
+import axios from 'axios'
+import { server, showError } from '../common'
 import AuthInput from '../components/AuthInput'
 import backgroundImage from '../../assets/imgs/login.jpg'
 import commonStyles from '../commonStyles'
@@ -21,16 +21,57 @@ export default class Auth extends Component {
         password: '',
         confirmPassword: '',
     }
+    signin = async () => {
+        try {
+            const res = await axios.post(`${server}/signin`,{
+                email: this.state.email,
+                password: this.state.password,
+            })
 
+            axios.defaults.headers.common['Authorization'] = `bearer ${res.data.token}`
+            this.props.navigation.navigate('Home')
+        } catch (err){
+            // Alert.alert('Error', `Falha no login`)
+            showError(err)
+        }
+    }
+
+    signup = async () => {
+        try {
+            await axios.post(`${server}/signup`,{
+                name: this.state.name,
+                email: this.state.email,
+                password: this.state.password,
+                confirmPassword: this.state.confirmPassword,
+            })
+
+            Alert.alert("Success", "Registred User")
+            this.setState({ stageNew: false })
+        } catch (err){
+            showError(err)
+        }
+    }
     signinOrSignup = () => {
         if (this.state.stageNew) {
-            Alert.alert("Success", "Create new Account!")
+            this.signup()
         }else{
-            Alert.alert("Success", "Login!")
+            this.signin()
         }
     }
 
     render() {
+        const validations = []
+
+        validations.push(this.state.email && this.state.email.includes('@'))
+        validations.push(this.state.password && this.state.password.length >= 6)
+
+        if(this.state.stageNew){
+            validations.push(this.state.name && this.state.name.trim())
+            validations.push(this.state.confirmPassword)
+            validations.push(this.state.password === this.state.confirmPassword)
+        }
+
+        const validForm = validations.reduce((all, v) => all && v)
         return(
             <ImageBackground source={backgroundImage}style={styles.background}>
                 <Text style={styles.title}>TASK</Text>
@@ -52,8 +93,9 @@ export default class Auth extends Component {
                         <AuthInput icon='asterisk' secureTextEntry={true} placeholder='Confirm Password' style={styles.input}
                             value={this.state.confirmPassword}
                             onChangeText={confirmPassword => this.setState({ confirmPassword })}/>}
-                    <TouchableOpacity onPress={this.signinOrSignup}>
-                        <View style={styles.button}>
+                    <TouchableOpacity  disabled={!validForm}
+                            onPress={this.signinOrSignup}>
+                        <View style={[styles.button, !validForm ? { backgroundColor: '#AAA'} : {} ]}>
                             <Text style={styles.buttonText}>
                                 {this.state.stageNew ? "Register": "Login"}
                             </Text>
@@ -105,6 +147,7 @@ export default class Auth extends Component {
          marginTop: 10,
          padding: 10,
          alignItems: 'center',
+         borderRadius: 20,
      },
      buttonText: {
          fontFamily: commonStyles.fontFamily,
